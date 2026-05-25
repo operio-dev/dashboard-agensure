@@ -6,7 +6,7 @@ import { RiskScoreBanner } from "@/components/agensure/RiskScoreBanner";
 import { RiskRadar } from "@/components/agensure/RiskRadar";
 import { ProbeLogTable } from "@/components/agensure/ProbeLogTable";
 import { DeepProbingPaywall } from "@/components/agensure/DeepProbingPaywall";
-import { DOMAINS, computeARS, type DomainKey } from "@/lib/agensure-data";
+import { DOMAINS, PROBE_LOGS, computeARS, type DomainKey } from "@/lib/agensure-data";
 
 export const Route = createFileRoute("/")({
   head: () => ({
