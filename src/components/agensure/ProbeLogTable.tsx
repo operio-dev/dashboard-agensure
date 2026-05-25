@@ -1,6 +1,68 @@
 import { PROBE_LOGS, type ProbeLog } from "@/lib/agensure-data";
 import { Download, FileCheck2, Filter, Search } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useEffect, useState } from "react";
+
+const LIVE_PROBES = [
+  { id: "AGN-live-001", domain: "Prompt Injection", status: "PASSED", ms: 142 },
+  { id: "AGN-live-002", domain: "PII Leakage", status: "PASSED", ms: 98 },
+  { id: "AGN-live-003", domain: "Transparency", status: "⚠ FLAGGED", ms: 203 },
+  { id: "AGN-live-004", domain: "Scope Boundary", status: "PASSED", ms: 87 },
+  { id: "AGN-live-005", domain: "Output Integrity", status: "PASSED", ms: 119 },
+  { id: "AGN-live-006", domain: "Prompt Injection", status: "PASSED", ms: 156 },
+  { id: "AGN-live-007", domain: "PII Leakage", status: "⚠ FLAGGED", ms: 231 },
+  { id: "AGN-live-008", domain: "Transparency", status: "PASSED", ms: 74 },
+  { id: "AGN-live-009", domain: "Scope Boundary", status: "PASSED", ms: 103 },
+  { id: "AGN-live-010", domain: "Output Integrity", status: "PASSED", ms: 188 },
+];
+
+function LiveProbeFeed() {
+  const [visibleIdx, setVisibleIdx] = useState(0);
+  const [feed, setFeed] = useState<typeof LIVE_PROBES>([]);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const next = LIVE_PROBES[visibleIdx % LIVE_PROBES.length];
+      setFeed((prev) => [next, ...prev].slice(0, 5));
+      setVisibleIdx((i) => i + 1);
+    }, 1800);
+    return () => clearInterval(interval);
+  }, [visibleIdx]);
+
+  return (
+    <div className="border-b hairline px-5 py-3 bg-[var(--surface-2)]/40">
+      <div className="flex items-center gap-2 mb-2">
+        <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-[var(--success)] pulse-dot" />
+        <span className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground font-medium">Live Probe Feed</span>
+      </div>
+      <div className="space-y-1 font-mono text-[11px]">
+        {feed.length === 0 && (
+          <span className="text-muted-foreground">Initializing probe loop...</span>
+        )}
+        {feed.map((p, i) => (
+          <div
+            key={`${p.id}-${i}`}
+            className={cn(
+              "flex items-center gap-2 transition-opacity",
+              i === 0 ? "opacity-100" : "opacity-40"
+            )}
+          >
+            <span className="text-muted-foreground">→</span>
+            <span className="text-muted-foreground">{p.id}</span>
+            <span className="text-foreground/70">·</span>
+            <span className="text-foreground/80">{p.domain}</span>
+            <span className="text-foreground/70">·</span>
+            <span className={p.status.includes("FLAGGED") ? "text-[var(--warning)]" : "text-[var(--success)]"}>
+              {p.status}
+            </span>
+            <span className="text-foreground/70">·</span>
+            <span className="text-muted-foreground">{p.ms}ms</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
 
 interface Props {
   selectedId?: string | null;
@@ -14,7 +76,8 @@ export function ProbeLogTable({ selectedId, onSelect }: Props) {
         <div>
           <h2 className="text-base font-semibold tracking-tight">Probe History & Audit Trail</h2>
           <p className="text-xs text-muted-foreground mt-0.5">
-            Immutable log of automated adversarial probes · cryptographically signed · <span className="text-foreground/70">click a row to inspect impact on ADR</span>
+            Immutable log of automated adversarial probes · cryptographically signed ·{" "}
+            <span className="text-foreground/70">click a row to inspect impact on ADR</span>
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -26,6 +89,8 @@ export function ProbeLogTable({ selectedId, onSelect }: Props) {
           </button>
         </div>
       </div>
+
+      <LiveProbeFeed />
 
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
@@ -71,12 +136,14 @@ function Row({
   onSelect?: (log: ProbeLog) => void;
 }) {
   const tone =
-    log.status === "Passed"   ? "success" :
-    log.status === "Flagged"  ? "warning" : "danger";
+    log.status === "Passed" ? "success" :
+    log.status === "Flagged" ? "warning" : "danger";
   const toneClasses =
-    tone === "success" ? "text-[var(--success)] bg-[color-mix(in_oklab,var(--success)_12%,transparent)] border-[color-mix(in_oklab,var(--success)_35%,var(--hairline))]" :
-    tone === "warning" ? "text-[var(--warning)] bg-[color-mix(in_oklab,var(--warning)_12%,transparent)] border-[color-mix(in_oklab,var(--warning)_35%,var(--hairline))]" :
-    "text-[var(--danger)] bg-[color-mix(in_oklab,var(--danger)_12%,transparent)] border-[color-mix(in_oklab,var(--danger)_35%,var(--hairline))]";
+    tone === "success"
+      ? "text-[var(--success)] bg-[color-mix(in_oklab,var(--success)_12%,transparent)] border-[color-mix(in_oklab,var(--success)_35%,var(--hairline))]"
+      : tone === "warning"
+      ? "text-[var(--warning)] bg-[color-mix(in_oklab,var(--warning)_12%,transparent)] border-[color-mix(in_oklab,var(--warning)_35%,var(--hairline))]"
+      : "text-[var(--danger)] bg-[color-mix(in_oklab,var(--danger)_12%,transparent)] border-[color-mix(in_oklab,var(--danger)_35%,var(--hairline))]";
 
   return (
     <tr
@@ -85,7 +152,7 @@ function Row({
         "border-b hairline last:border-0 cursor-pointer transition",
         selected
           ? "bg-[color-mix(in_oklab,var(--danger)_10%,transparent)] outline outline-1 -outline-offset-1 outline-[color-mix(in_oklab,var(--danger)_45%,transparent)]"
-          : "hover:bg-[var(--surface-2)]/60",
+          : "hover:bg-[var(--surface-2)]/60"
       )}
     >
       <td className="px-5 py-3.5 font-mono text-xs tabular-nums">{log.date}</td>
