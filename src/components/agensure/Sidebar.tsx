@@ -52,6 +52,33 @@ export function Sidebar({ active, onChange }: Props) {
         </nav>
       </div>
 
+      <div className="px-3 pb-3">
+        <div className="rounded-lg border hairline bg-[var(--surface-2)] p-3 space-y-2.5">
+          <div className="text-[10px] font-medium uppercase tracking-[0.18em] text-muted-foreground">
+            Insurance Roadmap
+          </div>
+          <div className="space-y-1.5">
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] text-muted-foreground">ADR Certificate</span>
+              <span className="font-mono text-[10px] text-[var(--success)] font-medium">ACTIVE</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] text-muted-foreground">Insurance eligibility</span>
+              <span className="font-mono text-[10px] text-[var(--success)] font-medium">QUALIFIED</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] text-muted-foreground">MGA activation</span>
+              <span className="font-mono text-[10px] text-amber-400 font-medium">Q3 2027</span>
+            </div>
+          </div>
+          <div className="h-px bg-border" />
+          <div className="text-[10px] text-muted-foreground leading-relaxed">
+            EUR 1M liability pool · Priority access locked
+          </div>
+        </div>
+      </div>
+
+
       <div className="mt-auto p-3 border-t hairline">
         <div className="rounded-lg p-3 bg-[var(--surface-2)] border hairline">
           <div className="flex items-center gap-2 text-xs">
