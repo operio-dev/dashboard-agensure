@@ -1,6 +1,7 @@
 import { DOMAINS, type DomainKey } from "@/lib/agensure-data";
 import { ShieldCheck, Settings, LifeBuoy } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useEffect, useState } from "react";
 
 interface Props {
   active: DomainKey | "all";
@@ -8,6 +9,25 @@ interface Props {
 }
 
 export function Sidebar({ active, onChange }: Props) {
+  // Resilience values that drift slightly over time for live feel
+  const [liveResilience, setLiveResilience] = useState<Record<string, number>>(
+    Object.fromEntries(DOMAINS.map((d) => [d.key, d.resilience]))
+  );
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setLiveResilience((prev) => {
+        const next = { ...prev };
+        DOMAINS.forEach((d) => {
+          const drift = Math.floor(Math.random() * 3) - 1;
+          next[d.key] = Math.max(60, Math.min(99, d.resilience + drift));
+        });
+        return next;
+      });
+    }, 5000);
+    return () => clearInterval(interval);
+  }, []);
+
   return (
     <aside className="hidden md:flex w-72 shrink-0 flex-col border-r hairline bg-[var(--sidebar)]">
       <div className="flex items-center gap-2.5 px-5 py-5 border-b hairline">
@@ -37,6 +57,8 @@ export function Sidebar({ active, onChange }: Props) {
           {DOMAINS.map((d) => {
             const Icon = d.icon;
             const isActive = active === d.key;
+            const res = liveResilience[d.key] ?? d.resilience;
+            const isVulnerable = res < 85;
             return (
               <DomainItem
                 key={d.key}
@@ -45,13 +67,15 @@ export function Sidebar({ active, onChange }: Props) {
                 active={isActive}
                 onClick={() => onChange(d.key)}
                 icon={<Icon className="h-4 w-4" />}
-                resilience={d.resilience}
+                resilience={res}
+                vulnerable={isVulnerable}
               />
             );
           })}
         </nav>
       </div>
 
+      {/* Insurance Roadmap */}
       <div className="px-3 pb-3">
         <div className="rounded-lg border hairline bg-[var(--surface-2)] p-3 space-y-2.5">
           <div className="text-[10px] font-medium uppercase tracking-[0.18em] text-muted-foreground">
@@ -78,7 +102,6 @@ export function Sidebar({ active, onChange }: Props) {
         </div>
       </div>
 
-
       <div className="mt-auto p-3 border-t hairline">
         <div className="rounded-lg p-3 bg-[var(--surface-2)] border hairline">
           <div className="flex items-center gap-2 text-xs">
@@ -103,10 +126,15 @@ export function Sidebar({ active, onChange }: Props) {
 }
 
 function DomainItem({
-  label, sub, active, onClick, icon, resilience,
+  label, sub, active, onClick, icon, resilience, vulnerable,
 }: {
-  label: string; sub?: string; active: boolean;
-  onClick: () => void; icon: React.ReactNode; resilience?: number;
+  label: string;
+  sub?: string;
+  active: boolean;
+  onClick: () => void;
+  icon: React.ReactNode;
+  resilience?: number;
+  vulnerable?: boolean;
 }) {
   return (
     <button
@@ -133,9 +161,17 @@ function DomainItem({
         )}
       </span>
       {typeof resilience === "number" && (
-        <span className="font-mono text-[10px] text-muted-foreground tabular-nums mt-0.5">
-          {resilience}%
-        </span>
+        <div className="flex items-center gap-1.5 mt-0.5">
+          {vulnerable && (
+            <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-[var(--warning)] pulse-dot" />
+          )}
+          <span className={cn(
+            "font-mono text-[10px] tabular-nums transition-all duration-700",
+            vulnerable ? "text-[var(--warning)]" : "text-muted-foreground"
+          )}>
+            {resilience}%
+          </span>
+        </div>
       )}
     </button>
   );
