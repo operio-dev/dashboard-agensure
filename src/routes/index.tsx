@@ -6,7 +6,7 @@ import { RiskScoreBanner } from "@/components/agensure/RiskScoreBanner";
 import { RiskRadar } from "@/components/agensure/RiskRadar";
 import { ProbeLogTable } from "@/components/agensure/ProbeLogTable";
 import { DeepProbingPaywall } from "@/components/agensure/DeepProbingPaywall";
-import { DOMAINS, computeARS, type DomainKey } from "@/lib/agensure-data";
+import { DOMAINS, PROBE_LOGS, computeARS, type DomainKey } from "@/lib/agensure-data";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -22,10 +22,10 @@ export const Route = createFileRoute("/")({
 
 function Dashboard() {
   const [active, setActive] = useState<DomainKey | "all">("all");
+  const [selectedProbeId, setSelectedProbeId] = useState<string | null>(null);
 
   const filteredDomains = useMemo(() => {
     if (active === "all") return DOMAINS;
-    // Mock-update: focused domain stays prominent, peers slightly damped
     const target = DOMAINS.find((d) => d.key === active)!;
     return DOMAINS.map((d) =>
       d.key === active
@@ -34,7 +34,26 @@ function Dashboard() {
     );
   }, [active]);
 
-  const ars = useMemo(() => computeARS(filteredDomains), [filteredDomains]);
+  const baseArs = useMemo(() => computeARS(filteredDomains), [filteredDomains]);
+
+  // Demo override: selecting a Critical probe sends ARS above the 70 threshold,
+  // which auto-suspends the ADR certificate in RiskScoreBanner.
+  const selectedProbe = useMemo(
+    () => PROBE_LOGS.find((p) => p.id === selectedProbeId) ?? null,
+    [selectedProbeId],
+  );
+  const ars =
+    selectedProbe?.status === "Critical"
+      ? Math.max(baseArs, 82)
+      : selectedProbe?.status === "Flagged"
+      ? Math.max(baseArs, 58)
+      : baseArs;
+
+  const suspendReason =
+    selectedProbe?.status === "Critical"
+      ? `Auto-suspended · probe ${selectedProbe.id} reported ${selectedProbe.failed} critical failures`
+      : null;
+
   const scope =
     active === "all"
       ? "All Domains"
@@ -49,9 +68,14 @@ function Dashboard() {
 
         <main className="flex-1 overflow-y-auto">
           <div className="mx-auto max-w-[1400px] px-6 py-6 space-y-6">
-            <RiskScoreBanner score={ars} scope={scope} />
+            <RiskScoreBanner score={ars} scope={scope} suspendReason={suspendReason} />
             <RiskRadar domains={filteredDomains} highlightKey={active === "all" ? undefined : active} />
-            <ProbeLogTable />
+            <ProbeLogTable
+              selectedId={selectedProbeId}
+              onSelect={(log) =>
+                setSelectedProbeId((prev) => (prev === log.id ? null : log.id))
+              }
+            />
             <DeepProbingPaywall />
             <footer className="pt-2 pb-8 flex items-center justify-between text-[11px] text-muted-foreground">
               <span>© 2026 Agensure · AI Underwriting Inc.</span>

@@ -82,6 +82,7 @@ export interface ProbeLog {
 }
 
 export const PROBE_LOGS: ProbeLog[] = [
+  { id: "AGN-2026-0525-X", date: "May 25, 2026 · 14:22 UTC", totalProbes: 250, passed: 198, failed: 52, status: "Critical" },
   { id: "AGN-2026-0521", date: "May 25, 2026 · 01:38 UTC", totalProbes: 250, passed: 244, failed: 6, status: "Passed" },
   { id: "AGN-2026-0518", date: "May 18, 2026 · 02:02 UTC", totalProbes: 250, passed: 239, failed: 11, status: "Flagged" },
   { id: "AGN-2026-0511", date: "May 11, 2026 · 01:55 UTC", totalProbes: 250, passed: 247, failed: 3, status: "Passed" },

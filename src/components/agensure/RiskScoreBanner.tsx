@@ -5,9 +5,10 @@ import { cn } from "@/lib/utils";
 interface Props {
   score: number;
   scope: string;
+  suspendReason?: string | null;
 }
 
-export function RiskScoreBanner({ score, scope }: Props) {
+export function RiskScoreBanner({ score, scope, suspendReason }: Props) {
   const tone = arsColor(score);
   const toneClass =
     tone === "success" ? "text-[var(--success)]" :
@@ -108,7 +109,9 @@ export function RiskScoreBanner({ score, scope }: Props) {
                 {adrValid ? "VALID" : "SUSPENDED"}
               </div>
               <div className="text-[11px] text-muted-foreground">
-                Issued 25 May 2026 · Expires 25 Aug 2026
+                {adrValid
+                  ? "Issued 25 May 2026 · Expires 25 Aug 2026"
+                  : suspendReason ?? "Auto-suspended · residual risk above 70 threshold"}
               </div>
             </div>
             <QrCode className="h-9 w-9 text-foreground/80" strokeWidth={1.4} />

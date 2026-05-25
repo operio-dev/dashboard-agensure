@@ -2,14 +2,19 @@ import { PROBE_LOGS, type ProbeLog } from "@/lib/agensure-data";
 import { Download, FileCheck2, Filter, Search } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-export function ProbeLogTable() {
+interface Props {
+  selectedId?: string | null;
+  onSelect?: (log: ProbeLog) => void;
+}
+
+export function ProbeLogTable({ selectedId, onSelect }: Props) {
   return (
     <div className="rounded-xl border hairline bg-[var(--surface)]">
       <div className="flex flex-wrap items-center justify-between gap-3 px-5 py-4 border-b hairline">
         <div>
           <h2 className="text-base font-semibold tracking-tight">Probe History & Audit Trail</h2>
           <p className="text-xs text-muted-foreground mt-0.5">
-            Immutable log of automated adversarial probes · cryptographically signed
+            Immutable log of automated adversarial probes · cryptographically signed · <span className="text-foreground/70">click a row to inspect impact on ADR</span>
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -37,21 +42,34 @@ export function ProbeLogTable() {
           </thead>
           <tbody>
             {PROBE_LOGS.map((log) => (
-              <Row key={log.id} log={log} />
+              <Row
+                key={log.id}
+                log={log}
+                selected={selectedId === log.id}
+                onSelect={onSelect}
+              />
             ))}
           </tbody>
         </table>
       </div>
 
       <div className="flex items-center justify-between px-5 py-3 border-t hairline text-[11px] text-muted-foreground">
-        <span>Showing 6 of 47 probes · retained 24 months for compliance</span>
+        <span>Showing 7 of 47 probes · retained 24 months for compliance</span>
         <span className="font-mono">SHA-256 ledger verified ✓</span>
       </div>
     </div>
   );
 }
 
-function Row({ log }: { log: ProbeLog }) {
+function Row({
+  log,
+  selected,
+  onSelect,
+}: {
+  log: ProbeLog;
+  selected?: boolean;
+  onSelect?: (log: ProbeLog) => void;
+}) {
   const tone =
     log.status === "Passed"   ? "success" :
     log.status === "Flagged"  ? "warning" : "danger";
@@ -61,7 +79,15 @@ function Row({ log }: { log: ProbeLog }) {
     "text-[var(--danger)] bg-[color-mix(in_oklab,var(--danger)_12%,transparent)] border-[color-mix(in_oklab,var(--danger)_35%,var(--hairline))]";
 
   return (
-    <tr className="border-b hairline last:border-0 hover:bg-[var(--surface-2)]/60 transition">
+    <tr
+      onClick={() => onSelect?.(log)}
+      className={cn(
+        "border-b hairline last:border-0 cursor-pointer transition",
+        selected
+          ? "bg-[color-mix(in_oklab,var(--danger)_10%,transparent)] outline outline-1 -outline-offset-1 outline-[color-mix(in_oklab,var(--danger)_45%,transparent)]"
+          : "hover:bg-[var(--surface-2)]/60",
+      )}
+    >
       <td className="px-5 py-3.5 font-mono text-xs tabular-nums">{log.date}</td>
       <td className="px-3 py-3.5 font-mono text-xs text-muted-foreground">{log.id}</td>
       <td className="px-3 py-3.5 text-right font-mono tabular-nums">{log.totalProbes}</td>
@@ -74,7 +100,10 @@ function Row({ log }: { log: ProbeLog }) {
         </span>
       </td>
       <td className="px-5 py-3.5 text-right">
-        <button className="group inline-flex items-center gap-1.5 rounded-md border hairline bg-[var(--surface-2)] px-2.5 py-1.5 text-xs font-medium hover:bg-[var(--surface-3)] transition">
+        <button
+          onClick={(e) => e.stopPropagation()}
+          className="group inline-flex items-center gap-1.5 rounded-md border hairline bg-[var(--surface-2)] px-2.5 py-1.5 text-xs font-medium hover:bg-[var(--surface-3)] transition"
+        >
           <FileCheck2 className="h-3.5 w-3.5 text-[var(--success)]" />
           <span>Cryptographic PDF</span>
           <Download className="h-3.5 w-3.5 text-muted-foreground group-hover:text-foreground transition" />
