@@ -5,9 +5,10 @@ import { cn } from "@/lib/utils";
 interface Props {
   score: number;
   scope: string;
+  suspendReason?: string | null;
 }
 
-export function RiskScoreBanner({ score, scope }: Props) {
+export function RiskScoreBanner({ score, scope, suspendReason }: Props) {
   const tone = arsColor(score);
   const toneClass =
     tone === "success" ? "text-[var(--success)]" :
