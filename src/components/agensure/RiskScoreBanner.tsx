@@ -1,6 +1,7 @@
 import { arsColor } from "@/lib/agensure-data";
 import { QrCode, Clock, Calendar, ArrowUpRight } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useEffect, useState } from "react";
 
 interface Props {
   score: number;
@@ -9,7 +10,18 @@ interface Props {
 }
 
 export function RiskScoreBanner({ score, scope, suspendReason }: Props) {
-  const tone = arsColor(score);
+  const [liveScore, setLiveScore] = useState(score);
+
+  useEffect(() => {
+    setLiveScore(score);
+    const interval = setInterval(() => {
+      const drift = Math.floor(Math.random() * 5) - 2;
+      setLiveScore(Math.max(0, Math.min(100, score + drift)));
+    }, 4000);
+    return () => clearInterval(interval);
+  }, [score]);
+
+  const tone = arsColor(liveScore);
   const toneClass =
     tone === "success" ? "text-[var(--success)]" :
     tone === "warning" ? "text-[var(--warning)]" :
@@ -20,7 +32,7 @@ export function RiskScoreBanner({ score, scope, suspendReason }: Props) {
     tone === "warning" ? "from-[color-mix(in_oklab,var(--warning)_35%,transparent)]" :
     "from-[color-mix(in_oklab,var(--danger)_35%,transparent)]";
 
-  const adrValid = score <= 70;
+  const adrValid = liveScore <= 70;
 
   return (
     <section className="relative overflow-hidden rounded-xl border hairline bg-[var(--surface)]">
@@ -35,15 +47,18 @@ export function RiskScoreBanner({ score, scope, suspendReason }: Props) {
         <div className="bg-[var(--surface)] p-6 lg:p-8">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2 text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
-              <span className="inline-block h-1.5 w-1.5 rounded-full bg-[var(--success)] pulse-dot" />
+              <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-[var(--success)] pulse-dot" />
               Agensure Risk Score
             </div>
             <span className="font-mono text-[10px] text-muted-foreground">ARS · v3.2</span>
           </div>
 
           <div className="mt-6 flex items-end gap-4">
-            <div className={cn("font-mono text-[88px] leading-none font-semibold tracking-tight tabular-nums", toneClass)}>
-              {String(score).padStart(2, "0")}
+            <div className={cn(
+              "font-mono text-[88px] leading-none font-semibold tracking-tight tabular-nums transition-all duration-700",
+              toneClass
+            )}>
+              {String(liveScore).padStart(2, "0")}
             </div>
             <div className="pb-3">
               <div className={cn("text-xs font-semibold uppercase tracking-widest", toneClass)}>
@@ -53,15 +68,14 @@ export function RiskScoreBanner({ score, scope, suspendReason }: Props) {
             </div>
           </div>
 
-          {/* Threshold bar */}
           <div className="mt-6">
             <div className="relative h-1.5 w-full rounded-full bg-[var(--surface-3)] overflow-hidden">
               <div className="absolute inset-y-0 left-0 w-[40%] bg-[var(--success)]/70" />
               <div className="absolute inset-y-0 left-[40%] w-[30%] bg-[var(--warning)]/70" />
               <div className="absolute inset-y-0 left-[70%] w-[30%] bg-[var(--danger)]/70" />
               <div
-                className="absolute -top-1.5 h-4 w-0.5 bg-foreground"
-                style={{ left: `${Math.min(100, score)}%` }}
+                className="absolute -top-1.5 h-4 w-0.5 bg-foreground transition-all duration-700"
+                style={{ left: `${Math.min(100, liveScore)}%` }}
               />
             </div>
             <div className="mt-2 flex justify-between text-[10px] font-mono text-muted-foreground tabular-nums">
@@ -117,7 +131,10 @@ export function RiskScoreBanner({ score, scope, suspendReason }: Props) {
             <QrCode className="h-9 w-9 text-foreground/80" strokeWidth={1.4} />
           </div>
 
-          <button className="group mt-4 inline-flex items-center justify-between rounded-md border hairline bg-[var(--surface-2)] px-3.5 py-2.5 text-sm font-medium hover:bg-[var(--surface-3)] transition">
+          <button
+            onClick={() => window.open("/qr-verification", "_blank")}
+            className="group mt-4 inline-flex items-center justify-between rounded-md border hairline bg-[var(--surface-2)] px-3.5 py-2.5 text-sm font-medium hover:bg-[var(--surface-3)] transition"
+          >
             <span>View Dynamic QR Verification</span>
             <ArrowUpRight className="h-4 w-4 text-muted-foreground group-hover:text-foreground transition" />
           </button>
