@@ -1,26 +1,65 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useMemo, useState } from "react";
+import { Sidebar } from "@/components/agensure/Sidebar";
+import { Topbar } from "@/components/agensure/Topbar";
+import { RiskScoreBanner } from "@/components/agensure/RiskScoreBanner";
+import { RiskRadar } from "@/components/agensure/RiskRadar";
+import { ProbeLogTable } from "@/components/agensure/ProbeLogTable";
+import { DeepProbingPaywall } from "@/components/agensure/DeepProbingPaywall";
+import { DOMAINS, computeARS, type DomainKey } from "@/lib/agensure-data";
 
 export const Route = createFileRoute("/")({
-  component: Index,
+  head: () => ({
+    meta: [
+      { title: "Agensure — AI Underwriting & Continuous Probing" },
+      { name: "description", content: "Enterprise dashboard for AI agent risk underwriting, adversarial probing, and EU AI Act Art. 50 transparency compliance." },
+      { property: "og:title", content: "Agensure — AI Underwriting Dashboard" },
+      { property: "og:description", content: "Continuous probing, ADR certificates, and immutable audit trails for production AI agents." },
+    ],
+  }),
+  component: Dashboard,
 });
 
-// IMPORTANT: Replace this placeholder. For sites with multiple pages (About, Services, Contact, etc.),
-// create separate route files (about.tsx, services.tsx, contact.tsx) — don't put all pages in this file.
-function PlaceholderIndex() {
+function Dashboard() {
+  const [active, setActive] = useState<DomainKey | "all">("all");
+
+  const filteredDomains = useMemo(() => {
+    if (active === "all") return DOMAINS;
+    // Mock-update: focused domain stays prominent, peers slightly damped
+    const target = DOMAINS.find((d) => d.key === active)!;
+    return DOMAINS.map((d) =>
+      d.key === active
+        ? { ...d, resilience: Math.min(99, target.resilience + 2) }
+        : { ...d, resilience: Math.max(60, d.resilience - 6) }
+    );
+  }, [active]);
+
+  const ars = useMemo(() => computeARS(filteredDomains), [filteredDomains]);
+  const scope =
+    active === "all"
+      ? "All Domains"
+      : DOMAINS.find((d) => d.key === active)?.short ?? "All Domains";
+
   return (
-    <div
-      className="flex min-h-screen items-center justify-center"
-      style={{ backgroundColor: "#fcfbf8" }}
-    >
-      <img
-        data-lovable-blank-page-placeholder="REMOVE_THIS"
-        src="https://cdn.gpteng.co/blank-app-v1.svg"
-        alt="Your app will live here!"
-      />
+    <div className="flex min-h-screen w-full bg-background text-foreground">
+      <Sidebar active={active} onChange={setActive} />
+
+      <div className="flex-1 min-w-0 flex flex-col">
+        <Topbar scope={scope} />
+
+        <main className="flex-1 overflow-y-auto">
+          <div className="mx-auto max-w-[1400px] px-6 py-6 space-y-6">
+            <RiskScoreBanner score={ars} scope={scope} />
+            <RiskRadar domains={filteredDomains} highlightKey={active === "all" ? undefined : active} />
+            <ProbeLogTable />
+            <DeepProbingPaywall />
+            <footer className="pt-2 pb-8 flex items-center justify-between text-[11px] text-muted-foreground">
+              <span>© 2026 Agensure · AI Underwriting Inc.</span>
+              <span className="font-mono">build 3.2.1 · region eu-west-1</span>
+            </footer>
+          </div>
+        </main>
+      </div>
     </div>
   );
-}
-
-function Index() {
-  return <PlaceholderIndex />;
 }
